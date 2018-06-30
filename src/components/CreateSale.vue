@@ -60,8 +60,12 @@
         'setPrice'
       ]),
       ...mapActions('sale', {
-        createSale: 'createSale'
+        createSale: 'createSale',
+        generateSaleID: 'generateSaleID'
       })
+    },
+    created(){
+      this.generateSaleID()
     }
   }
 

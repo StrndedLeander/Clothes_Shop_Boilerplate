@@ -5,13 +5,18 @@ import router from '../../router'
 export default {
   namespaced: true,
   state: {
-    articleName: null,
-    description: null,
-    brand: null,
-    price: null,
-    files: null,
-    sales: null,
-    saleID: ''
+    currentSale: {
+      saleID: null,
+      created: null,
+      seller:null,
+      articleName: null,
+      description: null,
+      brand: null,
+      price: null,
+      files: null,
+      created: null
+    },
+    sales: null
   },
   getters: {
     /*Only Takes the name of files to add them to the database so a
@@ -20,27 +25,39 @@ export default {
     fileRefs(state) {
       var ref;
       var arr = []
-      for (var i = 0; i < state.files.length; i++) {
-        ref = state.files[i].name
+      for (var i = 0; i < state.currentSale.files.length; i++) {
+        ref = state.currentSale.files[i].name
         arr[i] = ref
       }
       return arr;
     }
   },
+
   actions: {
+    generateSaleID({
+      commit
+    }) {
+      var id = 'xxxxxxxx-xxxx-4xxx-xxx'.replace(/[xy]/g, function (c) {
+        var r = Math.random() * 16 | 0,
+          v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      })
+      console.log(id)
+      commit('setSaleID', id)
+    },
     uploadFile({
       state
-    }, imageFile,saleID) {
+    }, imageFile) {
       return new Promise(function (resolve, reject) {
         let ref = firebase.storage().ref()
         let file = imageFile;
-        let name = 'clothes_images' + '/' + firebase.auth().currentUser.email + '/' + saleID + '/' + imageFile.name
+        let name = 'clothes_images' + '/' + firebase.auth().currentUser.email + '/' + state.currentSale.saleID + '/' + imageFile.name
         let metadata = {
           contentType: file.type
         }
         ref.child(name).put(file, metadata).then(snapshot => {
-        
-        }).catch(error=>{
+
+        }).catch(error => {
           console.log(error.message)
         })
       })
@@ -49,46 +66,68 @@ export default {
     createSale({
       dispatch,
       commit,
-      rootState,
+      rootState, 
       state,
       getters
     }) {
       //Execute when no images were added
       var timestamp = new Date().toLocaleString();
-      if (state.files == null) {
+      var seller = rootState.user.currentUser.email
+      commit('setCreated', timestamp)
+      commit('setSeller', seller)
+      if (state.currentSale.files == null) {
         db.collection('clothes').add({
-          seller: rootState.user.currentUser.email,
-          articleName: state.articleName,
-          description: state.description,
-          brand: state.brand,
-          price: state.price,
-          created: timestamp
+          saleID: state.currentSale.saleID,
+          created: state.currentSale.created,
+          seller: state.currentSale.seller,
+          articleName: state.currentSale.articleName,
+          description: state.currentSale.description,
+          brand: state.currentSale.brand,
+          price: state.currentSale.price
         }).then(() => {
-          router.go('/')
+          dispatch('editSale')
+          router.push('/')
           commit('setStateToNull')
         }).catch(error => alert(error.message))
         //Execute when images were added
       } else {
         db.collection('clothes').add({
-          seller: rootState.user.currentUser.email,
-          articleName: state.articleName,
-          description: state.description,
-          brand: state.brand,
-          price: state.price,
-          imagesRefs: getters.fileRefs,
-          created: timestamp
-        }).then(docRef => {
-          // commit('setSaleID', docRef.id)
-          for (var i = 0; i < state.files.length; i++) {
-            dispatch('uploadFile', state.files[i],docRef.id)
+          saleID: state.currentSale.saleID,
+          created: state.currentSale.created,
+          seller: state.currentSale.seller,
+          articleName: state.currentSale.articleName,
+          description: state.currentSale.description,
+          brand: state.currentSale.brand,
+          price: state.currentSale.price,
+          imagesRefs: getters.fileRefs
+        }).then(() => {
+          for (var i = 0; i < state.currentSale.files.length; i++) {
+            dispatch('uploadFile', state.currentSale.files[i])
           }
+          router.push('/')
         }).catch(error => alert(error.message))
       }
     },
+    editSale() {
+      db.collection('clothes').where('saleID', '==', state.currentSale.saleID).get()
+        .then(querySnapshot => {
+          querySnapshot.forEach(doc => {
+            doc.ref.update({
+              saleID: state.currentSale.saleID,
+              created: state.currentSale.created,
+              seller: state.currentSale.seller,
+              articleName: state.currentSale.articleName,
+              description: state.currentSale.description,
+              brand: state.currentSale.brand,
+              price: state.currentSale.price,
+              imagesRefs: getters.fileRefs
+            })
+
+          })
+        })
+    },
     fetchSales({
-      commit,
-      state,
-      getters
+      commit
     }) {
       var allSales = [];
       db.collection('clothes').orderBy('created').get().then(querySnapshot => {
@@ -102,7 +141,7 @@ export default {
             'price': doc.data().price,
             'imagesRefs': doc.data().imagesRefs,
             'created': doc.data().created,
-            'downloadURL': [],
+            'downloadURLs': [],
             'frontPicture': ''
           }
           allSales.push(data)
@@ -124,7 +163,7 @@ export default {
             }
             //add all files/images to an array
             path.getDownloadURL().then(url => {
-              allSales[i].downloadURL[j] = url
+              allSales[i].downloadURLs[j] = url
             }, error => console.log(error.message))
           }
         }
@@ -133,34 +172,40 @@ export default {
     }
   },
   mutations: {
+    setCreated(state, time) {
+      state.currentSale.created = time
+    },
     setStateToNull(state) {
       //All state obejects related to adding a new sale
-      state.articleName = null
-      state.description = null
-      state.brand = null
-      state.price = null
-      state.files = null
+      state.currentSale.articleName = null
+      state.currentSale.description = null
+      state.currentSale.brand = null
+      state.currentSale.price = null
+      state.currentSale.files = null
     },
     setSaleID(state, id) {
-      state.saleID = id
+      state.currentSale.saleID = id
     },
     setFilesForUpload(state, pFiles) {
       //adds files as file object to state
-      state.files = []
-      state.files = pFiles
-      console.log(state.files)
+      state.currentSale.files = []
+      state.currentSale.files = pFiles
+      console.log(state.currentSale.files)
     },
     setArticleName(state, name) {
-      state.articleName = name
+      state.currentSale.articleName = name
+    },
+    setSeller(state,seller) {
+      state.currentSale.seller = seller
     },
     setDescription(state, pDescription) {
-      state.description = pDescription
+      state.currentSale.description = pDescription
     },
     setBrand(state, pBrand) {
-      state.brand = pBrand
+      state.currentSale.brand = pBrand
     },
     setPrice(state, pPrice) {
-      state.price = pPrice
+      state.currentSale.price = pPrice
     },
     setSales(state, sales) {
       state.sales = sales
