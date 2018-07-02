@@ -8,13 +8,14 @@ export default {
     currentSale: {
       saleID: null,
       created: null,
-      seller:null,
+      seller: null,
       articleName: null,
       description: null,
       brand: null,
       price: null,
       files: null,
-      created: null
+      downloadURLs: [],
+      frontPicture: null
     },
     sales: null
   },
@@ -42,21 +43,35 @@ export default {
           v = c == 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
       })
-      console.log(id)
       commit('setSaleID', id)
     },
-    uploadFile({
+    manageFile({
+      dispatch,
       state
     }, imageFile) {
+      var ref = firebase.storage().ref()
+      var file = imageFile;
+      var name = 'clothes_images' + '/' + firebase.auth().currentUser.email + '/' + state.currentSale.saleID + '/' + imageFile.name
+      var metadata = {
+        contentType: file.type
+      }
+      var path = ref.child(name)
       return new Promise(function (resolve, reject) {
-        let ref = firebase.storage().ref()
-        let file = imageFile;
-        let name = 'clothes_images' + '/' + firebase.auth().currentUser.email + '/' + state.currentSale.saleID + '/' + imageFile.name
-        let metadata = {
-          contentType: file.type
-        }
-        ref.child(name).put(file, metadata).then(snapshot => {
-
+        path.put(file, metadata).then(() => {
+          dispatch('manageDownloadURL', path)
+        }).catch(error => {
+          console.log(error.message)
+        })
+      })
+    },
+    manageDownloadURL({
+      commit
+    }, path) {
+      return new Promise(function (resolve, reject) {
+        var dURL
+        path.getDownloadURL().then(url => {
+          dURL = url
+          commit('pushToDownloadURLs', dURL)
         }).catch(error => {
           console.log(error.message)
         })
@@ -66,16 +81,34 @@ export default {
     createSale({
       dispatch,
       commit,
-      rootState, 
+      rootState,
       state,
       getters
     }) {
-      //Execute when no images were added
       var timestamp = new Date().toLocaleString();
       var seller = rootState.user.currentUser.email
       commit('setCreated', timestamp)
       commit('setSeller', seller)
-      if (state.currentSale.files == null) {
+      if (state.currentSale.files !== null) {
+        for (var i = 0; i < state.currentSale.files.length; i++) {
+          dispatch('manageFile', state.currentSale.files[i])
+        }
+        db.collection('clothes').add({
+          saleID: state.currentSale.saleID,
+          created: state.currentSale.created,
+          seller: state.currentSale.seller,
+          articleName: state.currentSale.articleName,
+          description: state.currentSale.description,
+          brand: state.currentSale.brand,
+          price: state.currentSale.price,
+          imagesRefs: getters.fileRefs,
+          downloadURLs: state.currentSale.downloadURLs,
+          frontPicture: state.currentSale.frontPicture
+        }).then(() => {
+          router.push('/')
+          commit('setStateToNull')
+        }).catch(error => alert(error.message))
+      } else {
         db.collection('clothes').add({
           saleID: state.currentSale.saleID,
           created: state.currentSale.created,
@@ -85,31 +118,17 @@ export default {
           brand: state.currentSale.brand,
           price: state.currentSale.price
         }).then(() => {
-          dispatch('editSale')
           router.push('/')
           commit('setStateToNull')
         }).catch(error => alert(error.message))
-        //Execute when images were added
-      } else {
-        db.collection('clothes').add({
-          saleID: state.currentSale.saleID,
-          created: state.currentSale.created,
-          seller: state.currentSale.seller,
-          articleName: state.currentSale.articleName,
-          description: state.currentSale.description,
-          brand: state.currentSale.brand,
-          price: state.currentSale.price,
-          imagesRefs: getters.fileRefs
-        }).then(() => {
-          for (var i = 0; i < state.currentSale.files.length; i++) {
-            dispatch('uploadFile', state.currentSale.files[i])
-          }
-          router.push('/')
-        }).catch(error => alert(error.message))
       }
     },
-    editSale() {
-      db.collection('clothes').where('saleID', '==', state.currentSale.saleID).get()
+    editSale({
+      state,
+      getters
+    }) {
+      var id = state.currentSale.saleID
+      db.collection('clothes').where('saleID', '==', id).get()
         .then(querySnapshot => {
           querySnapshot.forEach(doc => {
             doc.ref.update({
@@ -120,9 +139,8 @@ export default {
               description: state.currentSale.description,
               brand: state.currentSale.brand,
               price: state.currentSale.price,
-              imagesRefs: getters.fileRefs
+              imagesRefs: getters.fileRefs,
             })
-
           })
         })
     },
@@ -146,27 +164,6 @@ export default {
           }
           allSales.push(data)
         })
-        //Get downloadURLs
-        for (var i = 0; i < allSales.length; i++) {
-          let id = allSales[i].id
-          let seller = allSales[i].seller
-          let imageNames = allSales[i].imagesRefs
-          var storageRef = firebase.storage().ref('clothes_images/' + seller + '/' + id + '/');
-          for (var j = 0; j < imageNames.length; j++) {
-            let path = storageRef.child('/' + imageNames[j])
-            //Set first picture as front picture
-            if (j == 0) {
-              path.getDownloadURL().then(url => {
-                console.log(url)
-                allSales[i].frontPicture = url
-              }, error => console.log(error.message))
-            }
-            //add all files/images to an array
-            path.getDownloadURL().then(url => {
-              allSales[i].downloadURLs[j] = url
-            }, error => console.log(error.message))
-          }
-        }
         commit('setSales', allSales)
       }, error => alert(error.message))
     }
@@ -182,20 +179,25 @@ export default {
       state.currentSale.brand = null
       state.currentSale.price = null
       state.currentSale.files = null
+      state.currentSale.saleID = null
+      state.currentSale.seller = null
+      state.currentSale.downloadURLs = []
+      state.currentSale.frontPicture = null
+      state.currentSale.created = null
     },
     setSaleID(state, id) {
       state.currentSale.saleID = id
+      console.log(state.currentSale.saleID)
     },
     setFilesForUpload(state, pFiles) {
       //adds files as file object to state
       state.currentSale.files = []
       state.currentSale.files = pFiles
-      console.log(state.currentSale.files)
     },
     setArticleName(state, name) {
       state.currentSale.articleName = name
     },
-    setSeller(state,seller) {
+    setSeller(state, seller) {
       state.currentSale.seller = seller
     },
     setDescription(state, pDescription) {
@@ -209,6 +211,13 @@ export default {
     },
     setSales(state, sales) {
       state.sales = sales
+    },
+    pushToDownloadURLs(state, url) {
+      state.currentSale.downloadURLs.push(url)
+    },
+    setFrontPicture(state) {
+      state.currentSale.frontPicture = state.currentSale.downloadURLs[0]
+      alert(state.currentSale.downloadURLs[0])
     }
   }
 

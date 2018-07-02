@@ -3,7 +3,7 @@
     <div class="container home">
       <div v-for="sale in sales">
         <div class="col-md-3 sale mx-auto mt-5">
-          <img v-bind:src="sale.frontPicture">
+          <img :src="sale.frontPicture">
           <div class="saleValues row">
             <div class="col-md-10">
               <p>{{sale.brand}} - {{sale.articleName}} - {{sale.price}}€</p>
@@ -44,7 +44,6 @@
       this.fetchSales();
     }
   }
-
 </script>
 
 <style scoped>
