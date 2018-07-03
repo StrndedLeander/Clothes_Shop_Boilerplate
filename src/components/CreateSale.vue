@@ -1,6 +1,6 @@
 <template>
   <div class="container mt-2" id="createSale">
-    <form @submit.prevent="createSale" class="col s12">
+    <form @submit.prevent="prepareSale" class="col s12">
       <div class="row">
         <div class="input-field col s12">
           <input type="text" v-model="articleName" v-on:change="setArticleName(articleName)" required>
@@ -36,7 +36,8 @@
   import UploadFile from '@/components/UploadFile'
   import {
     mapActions,
-    mapMutations
+    mapMutations,
+    mapState
   } from 'vuex'
 
   export default {
@@ -60,12 +61,18 @@
         'setPrice'
       ]),
       ...mapActions('sale', {
+        prepareSale: 'prepareSaleFiles',
         createSale: 'createSale',
         generateSaleID: 'generateSaleID'
       })
     },
-    created(){
+    created() {
       this.generateSaleID()
+    },
+    computed: {
+      ...mapState('sale', {
+        sale: state => state.currentSale
+      })
     }
   }
 

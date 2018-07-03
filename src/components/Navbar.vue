@@ -19,8 +19,8 @@
             <router-link to="/register">Register</router-link>
           </li>
           <li v-if="isLoggedIn">
-            <label id="user" class="">{{user}}</label>
-            <button class="btn black" id="logut" v-on:click="logout">Logout</button>
+            <label id="user">{{user}}</label>
+            <button class="btn black" id="logout" v-on:click="logout">Logout</button>
           </li>
           </li>
         </ul>
@@ -75,16 +75,17 @@
   }
 
   #user {
-    border-bottom: 3px solid rgb(34, 34, 34);
+    border-bottom: 3px solid rgb(31, 120, 252);
     color: rgb(23, 22, 53);
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
     font-size: 16px;
     font-weight: 600;
-    margin-right: 14px;
+    margin-right: 25px;
+    line-height: 1.2;
   }
 
   #logout:hover {
-    border: 2px white solid;
+    border: 1px white solid;
   }
 
 </style>

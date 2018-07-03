@@ -1,15 +1,15 @@
 <template>
   <div class="body">
-    <div class="container home">
-      <div v-for="sale in sales">
-        <div class="col-md-3 sale mx-auto mt-5">
-          <img :src="sale.frontPicture">
-          <div class="saleValues row">
-            <div class="col-md-10">
-              <p>{{sale.brand}} - {{sale.articleName}} - {{sale.price}}€</p>
-            </div>
-            <div class="seller col-md-2">
-              <label>{{sale.seller}}</label>
+    <div class="container">
+      <div class="row" v-for="i in Math.ceil(sales.length / 3)">
+        <div v-for="sale in sales.slice((i - 1) * 3, i * 3)">
+          <div class="col-md-4 sale mt-5">
+            <img class="frontPicture" :src="sale.frontPicture">
+            <div class="saleValues row">
+              <div class="col-md-10">
+                <p>{{sale.brand}} - {{sale.articleName}} - {{sale.price}}€</p>
+                <p class="seller">{{sale.seller}}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -38,26 +38,39 @@
     methods: {
       ...mapActions('sale', {
         fetchSales: 'fetchSales'
-      })
+      }),
+      ...mapMutations('sale', [
+        'setStateToNull'
+      ])
     },
     created() {
       this.fetchSales();
+      this.setStateToNull()
     }
   }
+
 </script>
 
 <style scoped>
   .body {
-    margin: 0;
-    padding: 0;
+    background-color: rgb(255, 180, 153);
   }
 
-  .home {
-    margin-top: 30px;
+  .seller {
+    margin-top: -10px;
+    font-weight: 600;
+    font-size: 75%;
+    color: rgb(0, 0, 0);
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
   }
 
   .sellValues {
     padding-top: 0px;
+  }
+
+  .frontPicture {
+    max-width: 256px;
+    max-height: 144px;
   }
 
 </style>

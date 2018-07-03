@@ -6,6 +6,11 @@ import router from './router'
 import store from './vuex/index'
 import firebase from 'firebase'
 import './components/firebase/firebaseInit'
+import BootstrapVue from 'bootstrap-vue'
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
+
+Vue.use(BootstrapVue);
 
 Vue.config.productionTip = false
 
