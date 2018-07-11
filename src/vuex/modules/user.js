@@ -7,7 +7,12 @@ export default {
   state: {
     email: null,
     password: null,
-    currentUser: {}
+    displayName: null,
+    currentUser: {},
+    userSite: {
+      displayName: '',
+      sales: []
+    }
   },
   getters: {
     loggedIn() {
@@ -25,10 +30,15 @@ export default {
     }) {
       firebase.auth().createUserWithEmailAndPassword(state.email, state.password)
         .then(user => {
-          alert('Thanks for registering with ' + state.email)
-          commit('setLoggedIn', true)
-          router.go('/login')
-          commit('setToNull')
+          var currentUser = firebase.auth().currentUser
+          currentUser.updateProfile({
+            displayName: state.displayName
+          }).then(() => {
+            alert('Thanks for registering with ' + state.email)
+            commit('setLoggedIn', true)
+            router.go('/login')
+            commit('setToNull')
+          })
         }, error => alert(error.message))
     },
     login({
@@ -53,6 +63,27 @@ export default {
         router.go('/')
         commit('setNoUser')
       })
+    },
+
+    //Manage User Information such as displayName and sales in database so it can be shown on user profile
+    addUserToDB({}) {
+
+    },
+    fetchSingleUser({
+      state
+    }) {
+      let obj = {
+        displayName: '',
+        sales: []
+      }
+      db.collection('users').where('displayName', '==', state.userSite.displayName).get()
+        .then(querySnapshot => {
+          querySnapshot.forEach(doc => {
+            obj.displayName = doc.data().displayName
+            obj.sales = doc.data().sales
+          })
+          commit('setUserSite', obj)
+        })
     }
   },
   mutations: {
@@ -62,6 +93,7 @@ export default {
     setToNull(state) {
       state.email = null
       state.password = null
+      state.displayName = null
     },
     setNoUser(state) {
       state.currentUser = {}
@@ -74,6 +106,12 @@ export default {
     },
     setEmail(state, email) {
       state.email = email
+    },
+    setDisplayName(state, displayName) {
+      state.displayName = displayName
+    },
+    setUserSite(state, information) {
+      state.userSite = information
     }
   }
 }

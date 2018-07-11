@@ -1,9 +1,5 @@
 <template>
   <div class="uploadFile">
-    <div v-if="uploading" class="progress-bar" style="width: 500px;height: 30px; background-color: rgb(76, 85, 85);padding:5px; margin-bottom:20px;">
-      <div class="progress-bar" style="height: 100%; background-color: rgb(37, 183, 250);" v-bind:style="{width: percentage + '%'}">
-      </div>
-    </div>
     <input type="file" value="upload" id="fileButton" multiple="multiple" v-on:change="getFiles" />
   </div>
 </template>
@@ -18,12 +14,6 @@
 
   export default {
     name: 'uploadFile',
-    data() {
-      return {
-        uploading: false,
-        percentage: 0
-      }
-    },
     methods: {
       getFiles(e) {
         //Get files
@@ -38,9 +28,9 @@
           alert('You can only upload up to five files!')
         }
       },
-      ...mapMutations('sale',[
+      ...mapMutations('sale', [
         'setFilesForUpload'
-      ])
+      ]),
     }
   }
 

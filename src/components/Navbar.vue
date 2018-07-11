@@ -1,6 +1,6 @@
 <template>
   <nav>
-    <div class="nav-wrapper blue">
+    <div class="nav-wrapper grey">
       <div class="container">
         <router-link to="/" class="brand-logo center" id="brandName">Clothes Store</router-link>
         <ul>
@@ -8,7 +8,10 @@
             <router-link to="/">Home</router-link>
           </li>
           <li>
-            <router-link to="/new_sale">Add Item</router-link>
+            <router-link to="#">Buy</router-link>
+          </li>
+          <li>
+            <router-link to="/new_sale">Sell</router-link>
           </li>
         </ul>
         <ul class="right">
@@ -19,8 +22,14 @@
             <router-link to="/register">Register</router-link>
           </li>
           <li v-if="isLoggedIn">
-            <label id="user">{{user}}</label>
-            <button class="btn black" id="logout" v-on:click="logout">Logout</button>
+            <div class="col-md-6">
+              <router-link tag="button" class="btn userLink" v-bind:to="{name:'userProfile',params:{displayName:user.displayName}}">
+                <label class="user mr-2">{{user.displayName}}</label>
+              </router-link>
+            </div>
+            <div class="col-md-6">
+              <button class="btn black" id="logout" v-on:click="logout">Logout</button>
+            </div>
           </li>
           </li>
         </ul>
@@ -45,18 +54,18 @@
       ...mapMutations('user', [
         'setCurrentUser',
         'setNoUser',
-        'setEmail'
+        'setEmail',
       ]),
       ...mapActions('user', {
         logout: 'logout'
-      })
+      }),
     },
     computed: {
       ...mapGetters('user', {
         isLoggedIn: 'loggedIn'
       }),
       ...mapState('user', {
-        user: state => state.currentUser.email
+        user: state => state.currentUser
       })
     },
     created() {
@@ -69,19 +78,20 @@
 </script>
 
 <style scoped>
-  #brandName:hover {
-    font-weight: 600;
-    color: rgb(91, 255, 118);
-  }
-
-  #user {
+  .user {
     border-bottom: 3px solid rgb(31, 120, 252);
-    color: rgb(23, 22, 53);
+    color: rgb(0, 0, 0);
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     margin-right: 25px;
     line-height: 1.2;
+  }
+
+  .userLink {
+    max-width: 100px;
+    display: inline-block;
+    box-sizing: border-box; /* <- added this */
   }
 
   #logout:hover {

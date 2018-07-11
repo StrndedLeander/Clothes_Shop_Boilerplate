@@ -17,6 +17,12 @@
 </script>
 
 <style>
-
+  *{
+    padding: 0;
+    margin: 0;
+  }
+  #app {
+    background-color: rgb(255, 177, 103);
+  }
 
 </style>

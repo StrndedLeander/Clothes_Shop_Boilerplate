@@ -4,25 +4,25 @@
       <div class="row">
         <div class="input-field col s12">
           <input type="text" v-model="articleName" v-on:change="setArticleName(articleName)" required>
-          <label>Article Name</label>
+          <label class="label">Article Name</label>
         </div>
       </div>
       <div class="row">
         <div class="input-field col s12">
           <input type="text" v-model="description" v-on:change="setDescription(description)" required>
-          <label>Description</label>
+          <label class="label">Description</label>
         </div>
       </div>
       <div class="row">
         <div class="input-field col s12">
           <input type="text" v-model="brand" v-on:change="setBrand(brand)" required>
-          <label>Brand</label>
+          <label class="label">Brand</label>
         </div>
       </div>
       <div class="row">
         <div class="input-field col s12">
           <input style="padding-top: 16px;" type="number" v-model="price" v-on:change="setPrice(price)" required>
-          <label>Price</label>
+          <label class="label">Price</label>
         </div>
       </div>
       <UploadFile />
@@ -72,8 +72,8 @@
     computed: {
       ...mapState('sale', {
         sale: state => state.currentSale
-      })
-    }
+      }),
+    },
   }
 
 </script>
@@ -82,6 +82,9 @@
   @media screen and (min-width:1024px) and (max-width:1400px) {
     #createSale {
       width: 800px;
+    }
+    .label {
+      color: black;
     }
   }
 

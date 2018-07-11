@@ -1,8 +1,10 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import CreateSale from '@/components/CreateSale'
+import ViewSale from '@/components/ViewSale'
 import Login from '@/components/Login'
 import Register from '@/components/Register'
+import UserProfile from '@/components/UserProfile'
 import Home from '@/components/Home'
 import firebase from 'firebase'
 
@@ -13,7 +15,10 @@ let router = new Router({
   routes: [{
       path: '/',
       name: 'home',
-      component: Home
+      component: Home,
+      meta: {
+        home: true
+      }
     },
     {
       path: '/new_sale',
@@ -21,6 +26,22 @@ let router = new Router({
       component: CreateSale,
       meta: {
         requiresAuth: true
+      }
+    },
+    {
+      path: '/sale/:displayName/:id',
+      name: 'viewSale',
+      component: ViewSale,
+      meta: {
+        viewSale: true
+      }
+    },
+    {
+      path: '/user/:displayName',
+      name: 'userProfile',
+      component: UserProfile,
+      meta: {
+        userProfile: true
       }
     },
     {

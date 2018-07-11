@@ -5,6 +5,11 @@
         <div class="register card-panel white-text center">
           <h3>Register</h3>
           <form>
+              <div class="input-field">
+                  <i class="material-icons prefix">account_box</i>
+                  <input type="text" id="displayName" v-model="displayName" v-on:change="setDisplayName(displayName)">
+                  <label class="white-text" for="email">User Name</label>
+                </div>
             <div class="input-field">
               <i class="material-icons prefix">email</i>
               <input type="text" id="email" v-model="email" v-on:change="setEmail(email)">
@@ -34,7 +39,8 @@
     data() {
       return {
         email: '',
-        password: ''
+        password: '',
+        displayName: ''
       }
     },
     methods: {
@@ -43,7 +49,8 @@
       }),
       ...mapMutations('user', [
         'setPassword',
-        'setEmail'
+        'setEmail',
+        'setDisplayName'
       ])
     }
   }
@@ -51,8 +58,8 @@
 </script>
 
 <style scoped>
-.card-panel{
-  background-color: rgb(2, 191, 233);
-}
+  .card-panel {
+    background-color: rgb(2, 191, 233);
+  }
 
 </style>

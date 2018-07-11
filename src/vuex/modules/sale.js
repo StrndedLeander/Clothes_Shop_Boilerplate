@@ -13,27 +13,29 @@ export default {
       description: null,
       brand: null,
       price: null,
-      files: null,
+      files: [],
       downloadURLs: [],
       frontPicture: null
     },
-    sales: null
+    sales: [],
+    w_h_object: {}
   },
   getters: {
     /*Only Takes the name of files to add them to the database so a
      * reference can be created by user + saleID + image_name
      * */
     fileRefs(state) {
-      var ref;
-      var arr = []
-      for (var i = 0; i < state.currentSale.files.length; i++) {
-        ref = state.currentSale.files[i].name
-        arr[i] = ref
+      if (state.currentSale.files != null) {
+        let arr = state.currentSale.files
+        let toPass = []
+        for (let i = 0; i < arr.length; i++) {
+          let ref = arr[i].name
+          toPass[i] = ref
+        }
+        return toPass;
       }
-      return arr;
     }
   },
-
   actions: {
     generateSaleID({
       commit
@@ -52,12 +54,9 @@ export default {
       var ref = firebase.storage().ref()
       var file = imageFile;
       var name = 'clothes_images' + '/' + firebase.auth().currentUser.email + '/' + state.currentSale.saleID + '/' + imageFile.name
-      var metadata = {
-        contentType: file.type
-      }
       var path = ref.child(name)
       return new Promise(function (resolve, reject) {
-        path.put(file, metadata).then(() => {
+        path.put(file).then(() => {
           dispatch('manageDownloadURL', path)
         }).catch(error => {
           console.log(error.message)
@@ -65,11 +64,13 @@ export default {
       })
     },
     manageDownloadURL({
-      commit
+      commit,
     }, path) {
       return new Promise(function (resolve, reject) {
         path.getDownloadURL().then(url => {
+          console.log(url)
           commit('pushToDownloadURLs', url)
+          commit('setFrontPicture')
         }).catch(error => {
           console.log(error.message)
         })
@@ -77,23 +78,23 @@ export default {
     },
     prepareSaleFiles({
       dispatch,
-      commit,
       state
     }) {
-      if (state.currentSale.files !== null) {
+      let time = 0;
+      if (state.currentSale.files !== []) {
         for (var i = 0; i < state.currentSale.files.length; i++) {
           dispatch('manageFile', state.currentSale.files[i])
         }
-
-        if (state.currentSale.downloadURLs !== null) {
-          var check = setInterval(() => {
-            if (state.currentSale.downloadURLs.length >= state.currentSale.files.length) {
-              commit('setFrontPicture')
-              dispatch('createSale')
-              clearInterval(check)
-            }
-          }, 5)
-        }
+        let doIt = setInterval(() => {
+          time += 1
+          if (state.currentSale.downloadURLs.length == state.currentSale.files.length) {
+            dispatch('createSale')
+            clearInterval(doIt)
+          } else if (state.currentSale.downloadURLs.length >= state.currentSale.files.length || time >= 2000) {
+            alert('Your sale could not be created, there was an error')
+            clearInterval(doIt)
+          }
+        }, 10)
       } else {
         dispatch('createSale')
         return;
@@ -110,21 +111,35 @@ export default {
       var seller = rootState.user.currentUser.email
       commit('setCreated', timestamp)
       commit('setSeller', seller)
+      if (state.currentSale.files.length > 0) {
+        db.collection('clothes').add({
+          saleID: state.currentSale.saleID,
+          created: state.currentSale.created,
+          seller: state.currentSale.seller,
+          articleName: state.currentSale.articleName,
+          description: state.currentSale.description,
+          brand: state.currentSale.brand,
+          price: state.currentSale.price,
+          imagesRefs: getters.fileRefs,
+          downloadURLs: state.currentSale.downloadURLs,
+          frontPicture: state.currentSale.frontPicture
+        }).then(() => {
+          router.push('/')
+        }).catch(error => alert(error.message))
+      } else {
+        db.collection('clothes').add({
+          saleID: state.currentSale.saleID,
+          created: state.currentSale.created,
+          seller: state.currentSale.seller,
+          articleName: state.currentSale.articleName,
+          description: state.currentSale.description,
+          brand: state.currentSale.brand,
+          price: state.currentSale.price,
+        }).then(() => {
+          router.push('/')
+        }).catch(error => alert(error.message))
+      }
 
-      db.collection('clothes').add({
-        saleID: state.currentSale.saleID,
-        created: state.currentSale.created,
-        seller: state.currentSale.seller,
-        articleName: state.currentSale.articleName,
-        description: state.currentSale.description,
-        brand: state.currentSale.brand,
-        price: state.currentSale.price,
-        imagesRefs: getters.fileRefs,
-        downloadURLs: state.currentSale.downloadURLs,
-        frontPicture: state.currentSale.frontPicture
-      }).then(() => {
-        router.push('/')
-      }).catch(error => alert(error.message))
     },
     editSale({
       state,
@@ -134,16 +149,29 @@ export default {
       db.collection('clothes').where('saleID', '==', id).get()
         .then(querySnapshot => {
           querySnapshot.forEach(doc => {
-            doc.ref.update({
-              saleID: state.currentSale.saleID,
-              created: state.currentSale.created,
-              seller: state.currentSale.seller,
-              articleName: state.currentSale.articleName,
-              description: state.currentSale.description,
-              brand: state.currentSale.brand,
-              price: state.currentSale.price,
-              imagesRefs: getters.fileRefs,
-            })
+            if (state.currentSale.files.length > 0) {
+              doc.ref.update({
+                saleID: state.currentSale.saleID,
+                created: state.currentSale.created,
+                seller: state.currentSale.seller,
+                articleName: state.currentSale.articleName,
+                description: state.currentSale.description,
+                brand: state.currentSale.brand,
+                price: state.currentSale.price,
+                imagesRefs: getters.fileRefs,
+              })
+            } else {
+              doc.ref.update({
+                saleID: state.currentSale.saleID,
+                created: state.currentSale.created,
+                seller: state.currentSale.seller,
+                articleName: state.currentSale.articleName,
+                description: state.currentSale.description,
+                brand: state.currentSale.brand,
+                price: state.currentSale.price,
+              })
+            }
+
           })
         })
     },
@@ -166,15 +194,16 @@ export default {
             'downloadURLs': doc.data().downloadURLs,
             'frontPicture': doc.data().frontPicture
           }
-          if (data.saleID !== 'xxxxxxxx-xxxx-4xxx-xxx') {
-            allSales.push(data)
-          }
+          allSales.push(data)
         })
         commit('setSales', allSales)
       }, error => alert(error.message))
     }
   },
   mutations: {
+    setWHObject(state, obj) {
+      state.w_h_object = obj
+    },
     setCreated(state, time) {
       state.currentSale.created = time
     },
@@ -196,7 +225,6 @@ export default {
     },
     setFilesForUpload(state, pFiles) {
       //adds files as file object to state
-      state.currentSale.files = []
       state.currentSale.files = pFiles
     },
     setArticleName(state, name) {
@@ -224,5 +252,4 @@ export default {
       state.currentSale.frontPicture = state.currentSale.downloadURLs[0]
     }
   }
-
 }
